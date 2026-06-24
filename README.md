@@ -1,5 +1,9 @@
 # ChordPilot
 
+<p align="center">
+  <strong>简体中文</strong> · <a href="README_EN.md">English</a>
+</p>
+
 ChordPilot 是一个本地运行的音乐科技 Web 应用。上传 MP3 或 WAV 后，它会提取音频色度特征，通过手工和弦模板匹配生成和弦时间轴，帮助学习、练习和音乐转写。
 
 > v0.1 的目标是生成“有用的和弦草稿”，而不是替代人工听辨或专业乐谱。
@@ -56,7 +60,8 @@ ChordPilot/
 │   ├── source_separator.py
 │   ├── schemas.py
 │   └── requirements.txt
-└── README.md
+├── README.md
+└── README_EN.md
 ```
 
 ## 启动后端
@@ -162,7 +167,7 @@ python -m unittest discover -s tests -v
 ## 当前限制
 
 - 复杂编曲、强打击乐、转位和弦、调音偏差会降低准确度
-- 固定时间窗尚未对齐节拍或小节
+- 部分歌曲的节拍估计可能不稳定，时间轴尚未按小节分组
 - Chroma 模板不能可靠区分所有高阶和弦语境
 - 没有登录、数据库或云端存储
 - v0.1 不显示钢琴五线谱或吉他六线谱
