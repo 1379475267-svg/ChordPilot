@@ -1,0 +1,10 @@
+frontend/node_modules/
+frontend/dist/
+backend/.venv/
+backend/__pycache__/
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.pyc
+*.log
+*.pid
+.DS_Store
