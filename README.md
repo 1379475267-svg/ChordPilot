@@ -4,6 +4,24 @@ ChordPilot 是一个本地运行的音乐科技 Web 应用。上传 MP3 或 WAV 
 
 > v0.1 的目标是生成“有用的和弦草稿”，而不是替代人工听辨或专业乐谱。
 
+## 界面预览
+
+### 音乐工作室首页与播放器
+
+![ChordPilot 首页与音频播放器](docs/images/chordpilot-hero.png)
+
+### 播放同步和弦时间轴
+
+![ChordPilot 和弦时间轴](docs/images/chordpilot-timeline.png)
+
+### 上传分析与加载状态
+
+![ChordPilot 上传分析界面](docs/images/chordpilot-analysis.png)
+
+### 和弦进行复制与导出
+
+![ChordPilot 导出面板](docs/images/chordpilot-export.png)
+
 ## 功能
 
 - 上传 `.mp3` / `.wav` 音频（最大 50 MB）
@@ -12,7 +30,7 @@ ChordPilot 是一个本地运行的音乐科技 Web 应用。上传 MP3 或 WAV 
 - 基础和弦：12 个根音的大三和弦、小三和弦
 - 扩展和弦：7、maj7、m7、dim、aug、sus2、sus4、6、m6、m7b5、dim7、add9、5
 - HTML5 音频播放
-- 横向和弦时间轴与置信度
+- 随播放自动滚动、高亮和跳转的横向和弦时间轴
 - PrimeVue 分析明细表格
 - 复制和弦进行、导出 TXT、导出 JSON
 
