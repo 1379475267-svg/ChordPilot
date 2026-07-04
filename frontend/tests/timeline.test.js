@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { calculatePlaybackProgress, findActiveChordIndex } from '../src/utils/timeline.js'
+import {
+  buildTimelineBars,
+  calculateChordWidth,
+  calculatePlaybackProgress,
+  calculatePlayheadOffset,
+  calculateTimelineWidth,
+  findActiveChordIndex
+} from '../src/utils/timeline.js'
 
 const chords = [
   { start: 0, end: 2, chord: 'C' },
@@ -23,4 +30,18 @@ test('clamps playback progress to zero and one hundred percent', () => {
   assert.equal(calculatePlaybackProgress(-1, 6), 0)
   assert.equal(calculatePlaybackProgress(3, 6), 50)
   assert.equal(calculatePlaybackProgress(8, 6), 100)
+})
+
+test('sizes timeline elements from real playback duration', () => {
+  const width = calculateTimelineWidth(180, 980)
+  assert.ok(width >= 980)
+  assert.equal(calculatePlayheadOffset(90, 180, width), Math.round(width / 2))
+  assert.ok(calculateChordWidth({ start: 0, end: 8 }, width, 180) > calculateChordWidth({ start: 0, end: 2 }, width, 180))
+})
+
+test('builds deterministic decorative waveform bars', () => {
+  const bars = buildTimelineBars(8)
+  assert.equal(bars.length, 8)
+  assert.deepEqual(bars, buildTimelineBars(8))
+  assert.ok(bars.every((height) => height >= 18))
 })
