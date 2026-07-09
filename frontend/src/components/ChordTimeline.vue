@@ -1,11 +1,14 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onBeforeUpdate, ref, watch } from 'vue'
 import {
+  buildWaveformBarsFromChannel,
   buildTimelineBars,
   calculateChordWidth,
+  calculateFitZoom,
   calculatePlaybackProgress,
   calculatePlayheadOffset,
   calculateTimelineWidth,
+  clampTimelineZoom,
   findActiveChordIndex
 } from '../utils/timeline.js'
 
@@ -13,6 +16,7 @@ const props = defineProps({
   chords: { type: Array, default: () => [] },
   duration: Number,
   currentTime: { type: Number, default: 0 },
+  audioFile: File,
   playing: Boolean
 })
 
@@ -20,15 +24,32 @@ const emit = defineEmits(['seek'])
 const scrollContainer = ref(null)
 const timelineCanvas = ref(null)
 const cardElements = ref([])
-const waveformBars = buildTimelineBars(118)
+const zoomLevel = ref(1)
+const followPlayback = ref(true)
+const decodedChannel = ref(null)
+const waveformStatus = ref('fallback')
 let scrollFrame = null
+let waveformRequestId = 0
 
 const activeIndex = computed(() => {
   return findActiveChordIndex(props.chords, props.currentTime, props.duration)
 })
 
 const activeChord = computed(() => props.chords[activeIndex.value]?.chord || '—')
-const totalWidth = computed(() => calculateTimelineWidth(props.duration))
+const zoomPercent = computed(() => Math.round(zoomLevel.value * 100))
+const totalWidth = computed(() => calculateTimelineWidth(props.duration, 980, zoomLevel.value))
+const waveformBarCount = computed(() => Math.max(96, Math.min(420, Math.round(totalWidth.value / 12))))
+const waveformBars = computed(() => {
+  if (decodedChannel.value) {
+    return buildWaveformBarsFromChannel(decodedChannel.value, waveformBarCount.value)
+  }
+  return buildTimelineBars(waveformBarCount.value)
+})
+const waveformLabel = computed(() => {
+  if (waveformStatus.value === 'loading') return '解析波形中'
+  if (waveformStatus.value === 'ready') return '真实波形'
+  return '波形草图'
+})
 const progress = computed(() => {
   return calculatePlaybackProgress(props.currentTime, props.duration)
 })
@@ -56,6 +77,14 @@ onBeforeUnmount(() => {
 })
 
 watch(
+  () => props.audioFile,
+  (file) => {
+    decodeWaveform(file)
+  },
+  { immediate: true }
+)
+
+watch(
   () => [activeIndex.value, props.playing],
   async ([index]) => {
     if (index < 0) return
@@ -67,7 +96,7 @@ watch(
 watch(
   () => props.currentTime,
   () => {
-    if (!props.playing) return
+    if (!props.playing || !followPlayback.value) return
     if (scrollFrame) return
     scrollFrame = window.requestAnimationFrame(() => {
       scrollFrame = null
@@ -75,6 +104,47 @@ watch(
     })
   }
 )
+
+async function decodeWaveform(file) {
+  const requestId = ++waveformRequestId
+  decodedChannel.value = null
+  if (!file) {
+    waveformStatus.value = 'fallback'
+    return
+  }
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext
+  if (!AudioContextClass) {
+    waveformStatus.value = 'fallback'
+    return
+  }
+
+  waveformStatus.value = 'loading'
+  let context = null
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    context = new AudioContextClass()
+    const audioBuffer = await context.decodeAudioData(arrayBuffer)
+    if (requestId !== waveformRequestId) return
+    decodedChannel.value = mixAudioBuffer(audioBuffer)
+    waveformStatus.value = 'ready'
+  } catch {
+    if (requestId === waveformRequestId) waveformStatus.value = 'fallback'
+  } finally {
+    if (context?.close) context.close()
+  }
+}
+
+function mixAudioBuffer(audioBuffer) {
+  const mixed = new Float32Array(audioBuffer.length)
+  for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
+    const data = audioBuffer.getChannelData(channel)
+    for (let index = 0; index < data.length; index += 1) {
+      mixed[index] = Math.max(mixed[index], Math.abs(data[index] || 0))
+    }
+  }
+  return mixed
+}
 
 function centerActiveCard(index) {
   const container = scrollContainer.value
@@ -97,6 +167,30 @@ async function seekTo(item, index) {
   emit('seek', item.start)
   await nextTick()
   centerActiveCard(index)
+}
+
+async function setZoom(nextZoom) {
+  zoomLevel.value = clampTimelineZoom(nextZoom)
+  await nextTick()
+  if (followPlayback.value) centerPlayhead()
+}
+
+function zoomOut() {
+  setZoom(zoomLevel.value - 0.25)
+}
+
+function zoomIn() {
+  setZoom(zoomLevel.value + 0.25)
+}
+
+function fitTimeline() {
+  const viewportWidth = scrollContainer.value?.clientWidth || 980
+  setZoom(calculateFitZoom(props.duration, viewportWidth))
+}
+
+function toggleFollowPlayback() {
+  followPlayback.value = !followPlayback.value
+  if (followPlayback.value) centerPlayhead()
 }
 
 function formatTime(seconds) {
@@ -128,6 +222,21 @@ function confidenceClass(confidence) {
       </div>
     </div>
 
+    <div class="timeline-tools" aria-label="时间轴缩放控制">
+      <button type="button" @click="zoomOut">缩小</button>
+      <span>{{ zoomPercent }}%</span>
+      <button type="button" @click="zoomIn">放大</button>
+      <button type="button" @click="fitTimeline">适应全曲</button>
+      <button
+        type="button"
+        :class="{ active: followPlayback }"
+        :aria-pressed="followPlayback"
+        @click="toggleFollowPlayback"
+      >
+        跟随播放
+      </button>
+    </div>
+
     <div class="timeline-console">
       <div class="console-readout">
         <span>NOW</span>
@@ -150,7 +259,13 @@ function confidenceClass(confidence) {
         class="timeline-canvas"
         :style="{ width: `${totalWidth}px`, '--playhead-x': `${playheadOffset}px`, '--progress': `${progress}%` }"
       >
-        <div class="waveform-strip" aria-hidden="true">
+        <div
+          class="waveform-strip"
+          :class="waveformStatus"
+          :style="{ '--waveform-bars': waveformBars.length }"
+          aria-hidden="true"
+        >
+          <span class="waveform-caption">{{ waveformLabel }}</span>
           <i
             v-for="(height, index) in waveformBars"
             :key="index"

@@ -153,6 +153,12 @@ audio { width: 100%; height: 42px; filter: sepia(.15) saturate(.8) hue-rotate(33
 
 .timeline-section, .table-section, .insight-card { padding: 28px; }
 .timeline-section { margin-bottom: 20px; overflow: hidden; }
+.timeline-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -8px 0 18px; padding: 8px; width: max-content; max-width: 100%; border: 1px solid rgba(109,65,111,.1); border-radius: 999px; background: rgba(255,255,255,.42); box-shadow: inset 0 1px 0 rgba(255,255,255,.75); }
+.timeline-tools button { min-height: 30px; border: 0; border-radius: 999px; padding: 7px 12px; color: var(--muted); background: transparent; cursor: pointer; font-size: 11px; transition: .2s ease; }
+.timeline-tools button:hover { color: var(--ink); background: rgba(239,118,95,.1); }
+.timeline-tools button:focus-visible { outline: 3px solid rgba(239,118,95,.22); outline-offset: 2px; }
+.timeline-tools button.active { color: #fffaf3; background: linear-gradient(100deg, var(--plum), #8f587f); box-shadow: 0 8px 18px rgba(109,65,111,.18); }
+.timeline-tools span { min-width: 48px; text-align: center; color: var(--plum); font: 600 11px 'DM Mono'; }
 .timeline-console { display: grid; grid-template-columns: 150px minmax(120px, 1fr) 130px; align-items: center; gap: 16px; margin: -6px 0 18px; }
 .console-readout { min-width: 0; padding: 12px 13px; border: 1px solid rgba(109,65,111,.1); border-radius: 16px; background: rgba(255,255,255,.5); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
 .console-readout span { display: block; color: var(--coral); font: 500 9px 'DM Mono'; letter-spacing: .18em; }
@@ -167,12 +173,15 @@ audio { width: 100%; height: 42px; filter: sepia(.15) saturate(.8) hue-rotate(33
 .timeline-scroll::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #c8aebd, #e3b77a); border-radius: 999px; }
 .timeline-canvas { min-width: 100%; position: relative; padding: 78px 0 5px; }
 .timeline-canvas::before { content: ''; position: absolute; left: 0; right: 0; top: 47px; height: 1px; background: linear-gradient(90deg, rgba(109,65,111,.12), rgba(239,118,95,.22), rgba(109,65,111,.12)); }
-.waveform-strip { position: absolute; left: 0; right: 0; top: 6px; height: 54px; display: grid; grid-template-columns: repeat(118, minmax(3px, 1fr)); align-items: center; gap: 3px; padding: 0 4px; border-radius: 18px; overflow: hidden; background:
+.waveform-strip { position: absolute; left: 0; right: 0; top: 6px; height: 54px; display: grid; grid-template-columns: repeat(var(--waveform-bars), minmax(3px, 1fr)); align-items: center; gap: 3px; padding: 0 4px; border-radius: 18px; overflow: hidden; background:
   linear-gradient(90deg, rgba(239,118,95,.18) 0 var(--progress), transparent var(--progress)),
   linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,245,235,.28));
   border: 1px solid rgba(109,65,111,.08);
 }
 .waveform-strip i { display: block; width: 100%; min-height: 8px; border-radius: 999px; background: linear-gradient(180deg, rgba(109,65,111,.58), rgba(239,118,95,.38)); opacity: .55; transform-origin: center; }
+.waveform-strip.ready i { background: linear-gradient(180deg, rgba(109,65,111,.66), rgba(116,149,120,.52)); opacity: .68; }
+.waveform-strip.loading i { animation: waveform-breathe 1.1s ease-in-out infinite alternate; }
+.waveform-caption { position: absolute; right: 10px; top: 8px; z-index: 2; color: rgba(109,65,111,.68); background: rgba(255,252,247,.72); border: 1px solid rgba(109,65,111,.08); border-radius: 999px; padding: 4px 8px; font: 500 9px 'DM Mono'; letter-spacing: .08em; backdrop-filter: blur(8px); }
 .global-playhead { position: absolute; left: var(--playhead-x); top: 0; bottom: 0; z-index: 6; width: 0; pointer-events: none; transition: left .1s linear; }
 .global-playhead::before { content: ''; position: absolute; top: 0; bottom: 0; width: 2px; transform: translateX(-1px); border-radius: 99px; background: linear-gradient(180deg, rgba(239,118,95,.15), var(--coral) 14%, var(--coral) 80%, rgba(239,118,95,.1)); box-shadow: 0 0 0 1px rgba(255,255,255,.8), 0 0 24px rgba(239,118,95,.32); }
 .global-playhead span { position: absolute; top: 42px; left: 50%; width: 18px; height: 18px; transform: translate(-50%, -50%) rotate(45deg); border-radius: 6px 6px 6px 1px; background: var(--coral); box-shadow: 0 8px 20px rgba(239,118,95,.28); }
@@ -231,6 +240,7 @@ footer i { color: var(--coral); font-size: 9px; }
 @keyframes reveal { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes pulse-dot { 50% { transform: scale(1.55); box-shadow: 0 0 0 5px rgba(239,118,95,.13); } }
 @keyframes needle-glow { 50% { transform: translate(-50%, -50%) rotate(45deg) scale(1.08); box-shadow: 0 10px 26px rgba(239,118,95,.42); } }
+@keyframes waveform-breathe { to { opacity: .28; transform: scaleY(.72); } }
 
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; text-align: center; padding-top: 70px; }
@@ -261,10 +271,12 @@ footer i { color: var(--coral); font-size: 9px; }
   .timeline-section, .table-section, .insight-card { padding: 20px; }
   .section-heading.compact { align-items: flex-start; }
   .timeline-live { align-items: flex-end; flex-direction: column; }
+  .timeline-tools { width: 100%; border-radius: 18px; justify-content: center; }
+  .timeline-tools button { flex: 1 1 auto; }
   .timeline-console { grid-template-columns: 1fr; gap: 10px; }
   .console-readout.right { text-align: left; }
   .timeline-canvas { padding-top: 70px; }
-  .waveform-strip { height: 48px; grid-template-columns: repeat(118, minmax(2px, 1fr)); gap: 2px; }
+  .waveform-strip { height: 48px; grid-template-columns: repeat(var(--waveform-bars), minmax(2px, 1fr)); gap: 2px; }
   .time-ruler span:nth-child(even) { display: none; }
   .chord-card { padding: 15px 13px; }
   .export-actions .p-button { flex: 1 1 45%; }
@@ -277,7 +289,8 @@ footer i { color: var(--coral); font-size: 9px; }
   .song-progress i,
   .timeline-scroll,
   .chord-card,
-  .global-playhead.playing span {
+  .global-playhead.playing span,
+  .waveform-strip.loading i {
     animation: none;
     scroll-behavior: auto;
     transition: none;

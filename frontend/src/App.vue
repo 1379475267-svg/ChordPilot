@@ -220,6 +220,7 @@ onMounted(() => {
           :chords="result.chords"
           :duration="result.duration"
           :current-time="currentTime"
+          :audio-file="selectedFile"
           :playing="isPlaying"
           @seek="audioPlayer?.seekTo($event)"
         />

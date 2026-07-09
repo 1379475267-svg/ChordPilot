@@ -3,10 +3,15 @@ import test from 'node:test'
 
 import {
   buildTimelineBars,
+  buildWaveformBarsFromChannel,
   calculateChordWidth,
+  calculateFitZoom,
   calculatePlaybackProgress,
   calculatePlayheadOffset,
   calculateTimelineWidth,
+  clampTimelineZoom,
+  MAX_TIMELINE_ZOOM,
+  MIN_TIMELINE_ZOOM,
   findActiveChordIndex
 } from '../src/utils/timeline.js'
 
@@ -44,4 +49,20 @@ test('builds deterministic decorative waveform bars', () => {
   assert.equal(bars.length, 8)
   assert.deepEqual(bars, buildTimelineBars(8))
   assert.ok(bars.every((height) => height >= 18))
+})
+
+test('clamps timeline zoom and fits songs into the viewport', () => {
+  assert.equal(clampTimelineZoom(0.1), MIN_TIMELINE_ZOOM)
+  assert.equal(clampTimelineZoom(9), MAX_TIMELINE_ZOOM)
+  assert.ok(calculateTimelineWidth(180, 980, 2) > calculateTimelineWidth(180, 980, 1))
+  assert.ok(calculateFitZoom(600, 980) >= MIN_TIMELINE_ZOOM)
+})
+
+test('builds waveform bars from real channel samples', () => {
+  const samples = Float32Array.from([0, 0.25, -0.5, 1, -1, 0.2, 0.1, 0])
+  const bars = buildWaveformBarsFromChannel(samples, 4)
+  assert.equal(bars.length, 4)
+  assert.ok(Math.max(...bars) <= 100)
+  assert.ok(Math.min(...bars) >= 10)
+  assert.ok(bars[1] > bars[0])
 })
