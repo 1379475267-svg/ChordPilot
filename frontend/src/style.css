@@ -284,6 +284,200 @@ footer i { color: var(--coral); font-size: 9px; }
   footer p { margin: 0; }
 }
 
+/* Studio-score visual system: an analytical music workspace rather than a decorative poster. */
+:root {
+  color: #111936;
+  background: #eef2ff;
+  --ink: #111936;
+  --muted: #637093;
+  --cream: #eef2ff;
+  --paper: rgba(255, 255, 255, .88);
+  --coral: #ff6f5e;
+  --plum: #3450e6;
+  --lavender: #8597ff;
+  --apricot: #b8f56d;
+  --sage: #3eaa8a;
+  --border: rgba(29, 48, 119, .15);
+}
+
+body { background: var(--cream); }
+
+.app-shell {
+  background:
+    radial-gradient(circle at 88% 5%, rgba(184, 245, 109, .34), transparent 19%),
+    radial-gradient(circle at 4% 29%, rgba(133, 151, 255, .25), transparent 23%),
+    linear-gradient(115deg, #f7f9ff 0%, #eef2ff 48%, #e5eaff 100%);
+}
+
+.app-shell::before {
+  opacity: .38;
+  background-image:
+    linear-gradient(rgba(52, 80, 230, .055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(52, 80, 230, .055) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.ambient { filter: blur(105px); opacity: .2; }
+.ambient-one { background: #8091ff; }
+.ambient-two { background: #b8f56d; }
+
+.site-header { height: 82px; border-color: rgba(29, 48, 119, .13); }
+.brand { gap: 11px; }
+.brand-icon {
+  width: 42px;
+  height: 42px;
+  color: #d9ffab;
+  background: #111936;
+  border: 1px solid rgba(184, 245, 109, .7);
+  border-radius: 12px 12px 3px 12px;
+  box-shadow: 5px 5px 0 rgba(52, 80, 230, .16);
+  transform: none;
+}
+.brand strong { font-weight: 900; letter-spacing: -.6px; }
+.brand small { color: #536188; letter-spacing: .11em; }
+.service-pill, .version-pill {
+  background: rgba(255, 255, 255, .72);
+  border-color: rgba(29, 48, 119, .13);
+  box-shadow: 0 5px 16px rgba(38, 56, 126, .05);
+}
+.version-pill { color: #253fc7; }
+.version-pill i { color: var(--coral); }
+
+.hero { min-height: 580px; gap: 44px; padding: 47px 0 66px; }
+.hero-kicker {
+  color: #263fbf;
+  border-color: rgba(52, 80, 230, .2);
+  border-radius: 5px 18px 18px 5px;
+  background: rgba(255, 255, 255, .66);
+  box-shadow: none;
+}
+.hero h1 { font-size: clamp(54px, 7vw, 84px); letter-spacing: -.075em; }
+.hero h1 em { color: #263fc7; text-decoration: underline 7px rgba(184, 245, 109, .85); text-underline-offset: .08em; }
+.hero-copy > p { color: #536188; max-width: 555px; }
+.hero-stats { gap: 9px; margin-top: 31px; }
+.hero-stats span {
+  min-width: 126px;
+  border-color: rgba(29, 48, 119, .13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .74);
+  box-shadow: 0 9px 22px rgba(37, 57, 128, .05);
+}
+.hero-stats span:first-child { border-top: 3px solid var(--coral); }
+.hero-stats span:nth-child(2) { border-top: 3px solid var(--plum); }
+.hero-stats span:last-child { border-top: 3px solid #60b99c; }
+.hero-stats svg { color: #263fc7; }
+
+.studio-poster {
+  width: 404px;
+  height: 442px;
+  padding: 27px;
+  border: 1px solid rgba(184, 245, 109, .75);
+  border-radius: 20px 20px 4px 20px;
+  background:
+    linear-gradient(rgba(150, 170, 255, .12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(150, 170, 255, .12) 1px, transparent 1px),
+    linear-gradient(145deg, #18265d, #2339ad 58%, #3450e6);
+  background-size: 22px 22px, 22px 22px, auto;
+  box-shadow: 18px 18px 0 rgba(52, 80, 230, .12), 0 30px 56px rgba(22, 38, 96, .24);
+  transform: rotate(1.25deg);
+}
+.poster-grain { opacity: .1; }
+.poster-topline { color: #e7ecff; }
+.poster-topline svg { color: #b8f56d; }
+.record-wrap { height: 230px; }
+.record {
+  width: 196px;
+  height: 196px;
+  color: #0f1737;
+  background: repeating-radial-gradient(circle at center, #d6ff9b 0 4px, #9acd59 5px 7px, #b8f56d 8px 10px);
+  box-shadow: 0 20px 0 rgba(9, 17, 59, .17), 0 22px 45px rgba(6, 12, 42, .4);
+}
+.record::before { border-color: rgba(15, 23, 55, .42); }
+.record-label { color: #dfffb2; background: #111936; border: 1px solid rgba(184, 245, 109, .8); }
+.tone-arm { background: #eaf0ff; box-shadow: 0 0 0 4px rgba(184, 245, 109, .16); }
+.tone-arm::after { background: var(--coral); }
+.poster-wave i { background: #b8f56d; }
+.floating-chord {
+  width: 62px;
+  height: 62px;
+  border: 1px solid rgba(52, 80, 230, .24);
+  border-radius: 7px 17px 17px 17px;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 7px 7px 0 rgba(52, 80, 230, .11);
+}
+.chord-c { color: var(--coral); }
+.chord-g { color: #263fc7; }
+.chord-am { color: #207f67; }
+.chord-f { color: #7950d8; }
+
+.glass-card {
+  background: rgba(255, 255, 255, .86);
+  border-color: rgba(29, 48, 119, .14);
+  border-radius: 14px;
+  box-shadow: 0 16px 42px rgba(32, 51, 119, .09), 0 1px 0 rgba(255, 255, 255, .9) inset;
+  backdrop-filter: blur(14px);
+}
+.upload-card { margin-bottom: 76px; }
+.upload-card::after { color: rgba(52, 80, 230, .055); }
+.eyebrow { color: #263fc7; }
+.step-number { color: rgba(52, 80, 230, .16); }
+.drop-zone {
+  border-color: rgba(52, 80, 230, .34);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(244, 247, 255, .96), rgba(231, 237, 255, .8));
+}
+.drop-zone::before {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  pointer-events: none;
+  border: 1px solid rgba(52, 80, 230, .08);
+  border-radius: 5px;
+}
+.drop-zone:hover, .drop-zone.active { border-color: var(--plum); background: #f8faff; box-shadow: 0 14px 30px rgba(52, 80, 230, .11); }
+.drop-zone.selected { border-color: #269879; background: #f4fff4; }
+.upload-icon { border-radius: 10px 10px 3px 10px; background: #111936; box-shadow: 5px 5px 0 rgba(184, 245, 109, .82); }
+.choice-card { border-radius: 8px; background: rgba(248, 250, 255, .72); }
+.choice-card.checked { border-color: rgba(52, 80, 230, .5); background: #edf1ff; box-shadow: inset 3px 0 0 #3450e6; }
+.choice-card.checked > i { color: #3450e6; }
+.analyze-button.p-button { border-radius: 8px; background: #111936; box-shadow: 6px 6px 0 #b8f56d; }
+.analyze-button.p-button:not(:disabled):hover { background: #263fc7; transform: translate(-1px, -1px); box-shadow: 8px 8px 0 #b8f56d; }
+
+.timeline-tools { border-radius: 8px; background: #f6f8ff; }
+.timeline-tools button.active { background: #111936; box-shadow: none; }
+.now-playing { color: #243cc0; border-radius: 7px; background: #ecf0ff; }
+.now-playing > i { background: #a3e951; }
+.console-readout { border-radius: 9px; background: #f8faff; }
+.console-readout span { color: #ff6f5e; }
+.song-progress { background: #e0e6ff; }
+.song-progress i { background: linear-gradient(90deg, #3450e6, #a6ee62); }
+.waveform-strip { border-radius: 9px; background: linear-gradient(90deg, rgba(52, 80, 230, .2) 0 var(--progress), transparent var(--progress)), #f3f6ff; }
+.waveform-strip i { background: linear-gradient(180deg, #3450e6, #91a3ff); }
+.waveform-strip.ready i { background: linear-gradient(180deg, #3450e6, #6dc7a6); }
+.global-playhead::before { background: linear-gradient(180deg, rgba(184, 245, 109, .1), #b8f56d 14%, #b8f56d 80%, rgba(184, 245, 109, .1)); box-shadow: 0 0 0 1px rgba(17, 25, 54, .16), 0 0 22px rgba(184, 245, 109, .7); }
+.global-playhead span { background: #111936; border: 1px solid #b8f56d; }
+.chord-card { border-color: rgba(29, 48, 119, .14); background: #f9faff; }
+.chord-card:first-child { border-left-color: rgba(29, 48, 119, .14); }
+.chord-card.active { border-color: #3450e6; background: #eaf0ff; box-shadow: 0 15px 28px rgba(52, 80, 230, .16); }
+
+.insight-card { background: linear-gradient(145deg, #111936, #263fc7); border-color: rgba(184, 245, 109, .42); border-radius: 14px; box-shadow: 10px 10px 0 rgba(184, 245, 109, .34); }
+.insight-card .eyebrow { color: #b8f56d; }
+.export-panel { border-color: rgba(52, 80, 230, .22); border-radius: 14px; background: linear-gradient(100deg, #edf1ff, #f8fbff); }
+.progression-preview span { color: #263fc7; }
+.export-actions .p-button:first-child { background: #111936; border-color: #111936; }
+
+@media (max-width: 900px) {
+  .studio-poster { box-shadow: 12px 12px 0 rgba(52, 80, 230, .12), 0 25px 45px rgba(22, 38, 96, .2); }
+}
+
+@media (max-width: 620px) {
+  .hero { padding-top: 44px; }
+  .hero-stats span { min-width: 0; }
+  .studio-poster { width: 350px; }
+  .glass-card { border-radius: 11px; }
+  .upload-card { margin-bottom: 55px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .global-playhead,
   .song-progress i,

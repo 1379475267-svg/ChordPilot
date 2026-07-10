@@ -2,17 +2,21 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  buildTimelineLayout,
   buildTimelineBars,
   buildWaveformBarsFromChannel,
+  buildWaveformBarsFromChannels,
   calculateChordWidth,
   calculateFitZoom,
   calculatePlaybackProgress,
   calculatePlayheadOffset,
+  calculateTimelinePlayheadOffset,
   calculateTimelineWidth,
   clampTimelineZoom,
   MAX_TIMELINE_ZOOM,
   MIN_TIMELINE_ZOOM,
-  findActiveChordIndex
+  findActiveChordIndex,
+  resampleWaveformBars
 } from '../src/utils/timeline.js'
 
 const chords = [
@@ -44,6 +48,26 @@ test('sizes timeline elements from real playback duration', () => {
   assert.ok(calculateChordWidth({ start: 0, end: 8 }, width, 180) > calculateChordWidth({ start: 0, end: 2 }, width, 180))
 })
 
+test('keeps the playhead aligned with minimum-width chord cards', () => {
+  const shortChords = Array.from({ length: 12 }, (_, index) => ({
+    start: index,
+    end: index + 1,
+    chord: 'C'
+  }))
+  const layout = buildTimelineLayout(shortChords, 12, 320)
+
+  assert.ok(layout.totalWidth > calculateTimelineWidth(12, 320))
+  assert.equal(calculateTimelinePlayheadOffset(layout.items, 0, 12, layout.totalWidth), 0)
+  assert.equal(
+    calculateTimelinePlayheadOffset(layout.items, 6, 12, layout.totalWidth),
+    layout.items[6].offset
+  )
+  assert.equal(
+    calculateTimelinePlayheadOffset(layout.items, 12, 12, layout.totalWidth),
+    layout.totalWidth
+  )
+})
+
 test('builds deterministic decorative waveform bars', () => {
   const bars = buildTimelineBars(8)
   assert.equal(bars.length, 8)
@@ -65,4 +89,18 @@ test('builds waveform bars from real channel samples', () => {
   assert.ok(Math.max(...bars) <= 100)
   assert.ok(Math.min(...bars) >= 10)
   assert.ok(bars[1] > bars[0])
+})
+
+test('builds bounded waveform bars from multiple channels without mixing samples', () => {
+  const left = Float32Array.from([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7])
+  const right = Float32Array.from([0, -0.2, -0.4, -0.6, -0.8, -1, -0.5, 0])
+  const bars = buildWaveformBarsFromChannels([left, right], 4, 2)
+
+  assert.equal(bars.length, 4)
+  assert.equal(Math.max(...bars), 100)
+  assert.ok(bars[2] > bars[0])
+  assert.deepEqual(resampleWaveformBars(bars, 2), [
+    Math.max(bars[0], bars[1]),
+    Math.max(bars[2], bars[3])
+  ])
 })

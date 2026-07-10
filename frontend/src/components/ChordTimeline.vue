@@ -1,15 +1,15 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onBeforeUpdate, ref, watch } from 'vue'
 import {
-  buildWaveformBarsFromChannel,
+  buildTimelineLayout,
+  buildWaveformBarsFromChannels,
   buildTimelineBars,
-  calculateChordWidth,
   calculateFitZoom,
   calculatePlaybackProgress,
-  calculatePlayheadOffset,
-  calculateTimelineWidth,
+  calculateTimelinePlayheadOffset,
   clampTimelineZoom,
-  findActiveChordIndex
+  findActiveChordIndex,
+  resampleWaveformBars
 } from '../utils/timeline.js'
 
 const props = defineProps({
@@ -26,10 +26,12 @@ const timelineCanvas = ref(null)
 const cardElements = ref([])
 const zoomLevel = ref(1)
 const followPlayback = ref(true)
-const decodedChannel = ref(null)
+const decodedWaveform = ref(null)
 const waveformStatus = ref('fallback')
 let scrollFrame = null
 let waveformRequestId = 0
+const MAX_WAVEFORM_DECODE_BYTES = 20 * 1024 * 1024
+const WAVEFORM_SOURCE_BARS = 420
 
 const activeIndex = computed(() => {
   return findActiveChordIndex(props.chords, props.currentTime, props.duration)
@@ -37,11 +39,12 @@ const activeIndex = computed(() => {
 
 const activeChord = computed(() => props.chords[activeIndex.value]?.chord || '—')
 const zoomPercent = computed(() => Math.round(zoomLevel.value * 100))
-const totalWidth = computed(() => calculateTimelineWidth(props.duration, 980, zoomLevel.value))
+const timelineLayout = computed(() => buildTimelineLayout(props.chords, props.duration, 980, zoomLevel.value))
+const totalWidth = computed(() => timelineLayout.value.totalWidth)
 const waveformBarCount = computed(() => Math.max(96, Math.min(420, Math.round(totalWidth.value / 12))))
 const waveformBars = computed(() => {
-  if (decodedChannel.value) {
-    return buildWaveformBarsFromChannel(decodedChannel.value, waveformBarCount.value)
+  if (decodedWaveform.value) {
+    return resampleWaveformBars(decodedWaveform.value, waveformBarCount.value)
   }
   return buildTimelineBars(waveformBarCount.value)
 })
@@ -54,18 +57,32 @@ const progress = computed(() => {
   return calculatePlaybackProgress(props.currentTime, props.duration)
 })
 const playheadOffset = computed(() => {
-  return calculatePlayheadOffset(props.currentTime, props.duration, totalWidth.value)
+  return calculateTimelinePlayheadOffset(
+    timelineLayout.value.items,
+    props.currentTime,
+    props.duration,
+    totalWidth.value
+  )
 })
 const activeItem = computed(() => props.chords[activeIndex.value])
 const activeRange = computed(() => {
   if (!activeItem.value) return '—'
   return `${formatTime(activeItem.value.start)} — ${formatTime(activeItem.value.end)}`
 })
-const timelineItems = computed(() => {
-  return props.chords.map((item) => ({
-    ...item,
-    width: calculateChordWidth(item, totalWidth.value, props.duration)
-  }))
+const timelineItems = computed(() => timelineLayout.value.items)
+const timeTicks = computed(() => {
+  return Array.from({ length: 7 }, (_, index) => {
+    const time = (index / 6) * props.duration
+    return {
+      time,
+      offset: calculateTimelinePlayheadOffset(
+        timelineLayout.value.items,
+        time,
+        props.duration,
+        totalWidth.value
+      )
+    }
+  })
 })
 
 onBeforeUpdate(() => {
@@ -107,8 +124,13 @@ watch(
 
 async function decodeWaveform(file) {
   const requestId = ++waveformRequestId
-  decodedChannel.value = null
+  decodedWaveform.value = null
   if (!file) {
+    waveformStatus.value = 'fallback'
+    return
+  }
+
+  if (file.size > MAX_WAVEFORM_DECODE_BYTES) {
     waveformStatus.value = 'fallback'
     return
   }
@@ -126,24 +148,17 @@ async function decodeWaveform(file) {
     context = new AudioContextClass()
     const audioBuffer = await context.decodeAudioData(arrayBuffer)
     if (requestId !== waveformRequestId) return
-    decodedChannel.value = mixAudioBuffer(audioBuffer)
+    const channels = Array.from(
+      { length: audioBuffer.numberOfChannels },
+      (_, index) => audioBuffer.getChannelData(index)
+    )
+    decodedWaveform.value = buildWaveformBarsFromChannels(channels, WAVEFORM_SOURCE_BARS)
     waveformStatus.value = 'ready'
   } catch {
     if (requestId === waveformRequestId) waveformStatus.value = 'fallback'
   } finally {
     if (context?.close) context.close()
   }
-}
-
-function mixAudioBuffer(audioBuffer) {
-  const mixed = new Float32Array(audioBuffer.length)
-  for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
-    const data = audioBuffer.getChannelData(channel)
-    for (let index = 0; index < data.length; index += 1) {
-      mixed[index] = Math.max(mixed[index], Math.abs(data[index] || 0))
-    }
-  }
-  return mixed
 }
 
 function centerActiveCard(index) {
@@ -277,11 +292,11 @@ function confidenceClass(confidence) {
         </div>
         <div class="time-ruler" aria-hidden="true">
           <span
-            v-for="tick in 7"
-            :key="tick"
-            :style="{ left: `${((tick - 1) / 6) * 100}%` }"
+            v-for="tick in timeTicks"
+            :key="tick.time"
+            :style="{ left: `${tick.offset}px` }"
           >
-            {{ formatTime(((tick - 1) / 6) * duration) }}
+            {{ formatTime(tick.time) }}
           </span>
         </div>
         <div class="timeline-track">
