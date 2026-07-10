@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
 import ProgressSpinner from 'primevue/progressspinner'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
@@ -13,11 +13,12 @@ import {
   PhWaveform
 } from '@phosphor-icons/vue'
 
-import AudioPlayer from './components/AudioPlayer.vue'
 import AudioUploader from './components/AudioUploader.vue'
-import ChordTable from './components/ChordTable.vue'
-import ChordTimeline from './components/ChordTimeline.vue'
-import ExportPanel from './components/ExportPanel.vue'
+
+const AudioPlayer = defineAsyncComponent(() => import('./components/AudioPlayer.vue'))
+const ChordTable = defineAsyncComponent(() => import('./components/ChordTable.vue'))
+const ChordTimeline = defineAsyncComponent(() => import('./components/ChordTimeline.vue'))
+const ExportPanel = defineAsyncComponent(() => import('./components/ExportPanel.vue'))
 
 const toast = useToast()
 const selectedFile = ref(null)
@@ -31,6 +32,7 @@ const currentTime = ref(0)
 const isPlaying = ref(false)
 const backendStatus = ref('checking')
 let healthTimer = null
+let analysisController = null
 
 const hasResult = computed(() => Boolean(result.value?.chords?.length))
 const backendStatusText = computed(() => {
@@ -64,6 +66,9 @@ async function analyze() {
 
   loading.value = true
   result.value = null
+  analysisController?.abort()
+  const controller = new AbortController()
+  analysisController = controller
 
   const formData = new FormData()
   formData.append('file', selectedFile.value)
@@ -71,7 +76,11 @@ async function analyze() {
   formData.append('chord_range', chordRange.value)
 
   try {
-    const response = await fetch('/api/analyze', { method: 'POST', body: formData })
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      body: formData,
+      signal: controller.signal
+    })
     const contentType = response.headers.get('content-type') || ''
     const payload = contentType.includes('application/json')
       ? await response.json()
@@ -90,9 +99,13 @@ async function analyze() {
       life: 4500
     })
   } catch (error) {
+    if (error.name === 'AbortError') return
     showError(error.message || '请确认后端服务已启动')
   } finally {
-    loading.value = false
+    if (analysisController === controller) {
+      analysisController = null
+      loading.value = false
+    }
   }
 }
 
@@ -117,6 +130,7 @@ function clearAll() {
 }
 
 onBeforeUnmount(() => {
+  analysisController?.abort()
   if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
   if (healthTimer) window.clearInterval(healthTimer)
 })
@@ -220,6 +234,7 @@ onMounted(() => {
           :chords="result.chords"
           :duration="result.duration"
           :current-time="currentTime"
+          :audio-file="selectedFile"
           :playing="isPlaying"
           @seek="audioPlayer?.seekTo($event)"
         />

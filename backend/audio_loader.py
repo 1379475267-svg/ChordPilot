@@ -1,7 +1,7 @@
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 import librosa
 import numpy as np
@@ -9,7 +9,9 @@ import numpy as np
 TARGET_SAMPLE_RATE = 22050
 
 
-def _load_with_bundled_ffmpeg(file_path: Path, sample_rate: int) -> Tuple[np.ndarray, int]:
+def _load_with_bundled_ffmpeg(
+    file_path: Path, sample_rate: int, max_duration: Optional[float] = None
+) -> Tuple[np.ndarray, int]:
     """当系统音频库无法解码时，使用项目依赖提供的便携 FFmpeg 转码。"""
     try:
         import imageio_ffmpeg
@@ -19,20 +21,23 @@ def _load_with_bundled_ffmpeg(file_path: Path, sample_rate: int) -> Tuple[np.nda
     ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
     with tempfile.TemporaryDirectory(prefix="chordpilot_decode_") as temp_dir:
         wav_path = Path(temp_dir) / "decoded.wav"
+        command = [
+            ffmpeg_path,
+            "-v",
+            "error",
+            "-y",
+            "-i",
+            str(file_path),
+            "-ac",
+            "1",
+            "-ar",
+            str(sample_rate),
+        ]
+        if max_duration is not None:
+            command.extend(["-t", str(max_duration + 1)])
+        command.append(str(wav_path))
         subprocess.run(
-            [
-                ffmpeg_path,
-                "-v",
-                "error",
-                "-y",
-                "-i",
-                str(file_path),
-                "-ac",
-                "1",
-                "-ar",
-                str(sample_rate),
-                str(wav_path),
-            ],
+            command,
             check=True,
             capture_output=True,
             timeout=180,
@@ -40,14 +45,25 @@ def _load_with_bundled_ffmpeg(file_path: Path, sample_rate: int) -> Tuple[np.nda
         return librosa.load(str(wav_path), sr=sample_rate, mono=True)
 
 
-def load_audio(file_path: Path, sample_rate: int = TARGET_SAMPLE_RATE) -> Tuple[np.ndarray, int]:
+def load_audio(
+    file_path: Path,
+    sample_rate: int = TARGET_SAMPLE_RATE,
+    max_duration: Optional[float] = None,
+) -> Tuple[np.ndarray, int]:
     """读取音频、转为单声道，并统一采样率与幅度。"""
     try:
-        audio, sr = librosa.load(str(file_path), sr=sample_rate, mono=True)
+        audio, sr = librosa.load(
+            str(file_path),
+            sr=sample_rate,
+            mono=True,
+            duration=max_duration + 1 if max_duration is not None else None,
+        )
     except Exception:
-        audio, sr = _load_with_bundled_ffmpeg(file_path, sample_rate)
+        audio, sr = _load_with_bundled_ffmpeg(file_path, sample_rate, max_duration)
     if audio.size == 0:
         raise ValueError("音频文件中没有可分析的内容")
+    if max_duration is not None and audio.size > max_duration * sr:
+        raise ValueError(f"音频时长不能超过 {max_duration:.0f} 秒")
 
     peak = float(np.max(np.abs(audio)))
     if peak > 0:

@@ -28,7 +28,7 @@ ChordPilot is a local music-tech web app that turns MP3 or WAV audio into a chor
 
 ## Features
 
-- Upload `.mp3` and `.wav` audio files up to 50 MB
+- Upload `.mp3` and `.wav` audio files up to 50 MB and 15 minutes
 - Fast mode for direct harmonic analysis
 - Clean mode with optional Demucs separation and graceful fallback
 - Basic chords: major and minor triads for all 12 roots
