@@ -8,6 +8,11 @@ ChordPilot is a local music-tech web app that turns MP3 or WAV audio into a chor
 
 > The goal of v0.1 is to generate a useful chord draft—not to replace careful listening or professional notation.
 
+## Live Demo
+
+- Alibaba Cloud deployment: [Open ChordPilot](http://47.109.136.234/projects/chordpilot/)
+
+
 ## Interface Preview
 
 ### Music Studio Home and Player
